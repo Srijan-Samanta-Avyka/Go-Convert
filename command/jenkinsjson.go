@@ -18,15 +18,16 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/drone/go-convert/convert/harness"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/drone/go-convert/convert/harness/downgrader"
-	"github.com/drone/go-convert/convert/jenkinsjson"
+	"github.com/Srijan-Samanta-Avyka/go-convert/convert/harness"
+
+	"github.com/Srijan-Samanta-Avyka/go-convert/convert/harness/downgrader"
+	"github.com/Srijan-Samanta-Avyka/go-convert/convert/jenkinsjson"
 
 	"github.com/google/subcommands"
 )

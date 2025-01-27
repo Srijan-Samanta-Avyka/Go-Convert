@@ -21,8 +21,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/drone/go-convert/convert/harness/downgrader"
-	"github.com/drone/go-convert/convert/jenkinsxml"
+	"github.com/Srijan-Samanta-Avyka/go-convert/convert/harness/downgrader"
+	"github.com/Srijan-Samanta-Avyka/go-convert/convert/jenkinsxml"
 
 	"github.com/google/subcommands"
 )

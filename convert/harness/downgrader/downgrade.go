@@ -22,12 +22,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/drone/go-convert/convert/harness"
-	"github.com/drone/go-convert/internal/slug"
-	"github.com/drone/go-convert/internal/store"
+	"github.com/Srijan-Samanta-Avyka/go-convert/convert/harness"
+	"github.com/Srijan-Samanta-Avyka/go-convert/internal/slug"
+	"github.com/Srijan-Samanta-Avyka/go-convert/internal/store"
 
-	downgraderYaml "github.com/drone/go-convert/convert/harness/downgrader/yaml"
-	v0 "github.com/drone/go-convert/convert/harness/yaml"
+	downgraderYaml "github.com/Srijan-Samanta-Avyka/go-convert/convert/harness/downgrader/yaml"
+	v0 "github.com/Srijan-Samanta-Avyka/go-convert/convert/harness/yaml"
 	v1 "github.com/drone/spec/dist/go"
 	"github.com/ghodss/yaml"
 )

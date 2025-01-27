@@ -19,7 +19,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	jenkinsxml "github.com/drone/go-convert/convert/jenkinsxml/xml"
+	jenkinsxml "github.com/Srijan-Samanta-Avyka/go-convert/convert/jenkinsxml/xml"
 	harness "github.com/drone/spec/dist/go"
 
 	"github.com/google/go-cmp/cmp"

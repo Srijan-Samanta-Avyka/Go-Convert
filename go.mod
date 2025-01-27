@@ -1,4 +1,5 @@
-module github.com/drone/go-convert
+module github.com/Srijan-Samanta-Avyka/go-convert
+
 
 go 1.19
 

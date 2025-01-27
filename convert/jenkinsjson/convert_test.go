@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	jenkinsjson "github.com/drone/go-convert/convert/jenkinsjson/json"
+	jenkinsjson "github.com/Srijan-Samanta-Avyka/go-convert/convert/jenkinsjson/json"
 	harness "github.com/drone/spec/dist/go"
 
 	"github.com/google/go-cmp/cmp"

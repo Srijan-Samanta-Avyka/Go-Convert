@@ -23,11 +23,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/drone/go-convert/convert/circle/internal/orbs"
-	circle "github.com/drone/go-convert/convert/circle/yaml"
+	"github.com/Srijan-Samanta-Avyka/go-convert/convert/circle/internal/orbs"
+	circle "github.com/Srijan-Samanta-Avyka/go-convert/convert/circle/yaml"
 	harness "github.com/drone/spec/dist/go"
 
-	"github.com/drone/go-convert/internal/store"
+	"github.com/Srijan-Samanta-Avyka/go-convert/internal/store"
 	"github.com/ghodss/yaml"
 )
 

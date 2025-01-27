@@ -23,7 +23,7 @@ import (
 
 	harness "github.com/drone/spec/dist/go"
 
-	"github.com/drone/go-convert/internal/store"
+	"github.com/Srijan-Samanta-Avyka/go-convert/internal/store"
 	"github.com/ghodss/yaml"
 )
 

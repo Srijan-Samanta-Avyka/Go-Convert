@@ -17,7 +17,7 @@ package travis
 import (
 	"strings"
 
-	travis "github.com/drone/go-convert/convert/travis/yaml"
+	travis "github.com/Srijan-Samanta-Avyka/go-convert/convert/travis/yaml"
 	harness "github.com/drone/spec/dist/go"
 )
 

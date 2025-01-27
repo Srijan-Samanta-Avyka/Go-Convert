@@ -23,8 +23,8 @@ import (
 	"strings"
 	"time"
 
-	cloudbuild "github.com/drone/go-convert/convert/cloudbuild/yaml"
-	"github.com/drone/go-convert/internal/store"
+	cloudbuild "github.com/Srijan-Samanta-Avyka/go-convert/convert/cloudbuild/yaml"
+	"github.com/Srijan-Samanta-Avyka/go-convert/internal/store"
 	harness "github.com/drone/spec/dist/go"
 
 	"github.com/ghodss/yaml"

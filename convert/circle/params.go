@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	circle "github.com/drone/go-convert/convert/circle/yaml"
+	circle "github.com/Srijan-Samanta-Avyka/go-convert/convert/circle/yaml"
 	"github.com/ghodss/yaml"
 )
 

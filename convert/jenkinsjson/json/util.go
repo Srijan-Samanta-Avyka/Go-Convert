@@ -15,9 +15,10 @@
 package json
 
 import (
-	"github.com/drone/go-convert/convert/harness"
 	"regexp"
 	"strings"
+
+	"github.com/Srijan-Samanta-Avyka/go-convert/convert/harness"
 )
 
 func SanitizeForId(spanName string, spanId string) string {

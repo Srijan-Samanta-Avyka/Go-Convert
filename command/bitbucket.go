@@ -21,8 +21,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/drone/go-convert/convert/bitbucket"
-	"github.com/drone/go-convert/convert/harness/downgrader"
+	"github.com/Srijan-Samanta-Avyka/go-convert/convert/bitbucket"
+	"github.com/Srijan-Samanta-Avyka/go-convert/convert/harness/downgrader"
 
 	"github.com/google/subcommands"
 )

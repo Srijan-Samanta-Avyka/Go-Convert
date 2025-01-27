@@ -18,7 +18,7 @@ import (
 	"strings"
 	"testing"
 
-	circle "github.com/drone/go-convert/convert/circle/yaml"
+	circle "github.com/Srijan-Samanta-Avyka/go-convert/convert/circle/yaml"
 	harness "github.com/drone/spec/dist/go"
 
 	"github.com/google/go-cmp/cmp"
