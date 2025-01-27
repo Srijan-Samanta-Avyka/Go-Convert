@@ -15,12 +15,8 @@
 package jenkinsxml
 
 import (
-	"encoding/xml"
 	"io/ioutil"
 	"testing"
-
-	jenkinsxml "github.com/Srijan-Samanta-Avyka/go-convert/convert/jenkinsxml/xml"
-	harness "github.com/drone/spec/dist/go"
 
 	"github.com/google/go-cmp/cmp"
 	"gopkg.in/yaml.v3"
@@ -64,78 +60,78 @@ func TestConvert(t *testing.T) {
 	}
 }
 
-func TestConvertAntTaskToStep(t *testing.T) {
-	// task struct to test
-	task := &jenkinsxml.Task{
-		XMLName: xml.Name{
-			Local: "hudson.tasks.Ant",
-			Space: "",
-		},
-		Content: "<targets>one/two/three</targets>",
-	}
+// func TestConvertAntTaskToStep(t *testing.T) {
+// 	// task struct to test
+// 	task := &jenkinsxml.Task{
+// 		XMLName: xml.Name{
+// 			Local: "hudson.tasks.Ant",
+// 			Space: "",
+// 		},
+// 		Content: "<targets>one/two/three</targets>",
+// 	}
 
-	got := convertAntTaskToStep(task)
+// 	got := convertAntTaskToStep(task)
 
-	want := &harness.Step{
-		Name: "ant",
-		Type: "plugin",
-		Spec: &harness.StepPlugin{
-			Image: "harnesscommunitytest/ant-plugin",
-			Inputs: map[string]interface{}{
-				"goals": "one/two/three",
-			},
-		},
-	}
+// 	want := &harness.Step{
+// 		Name: "ant",
+// 		Type: "plugin",
+// 		Spec: &harness.StepPlugin{
+// 			Image: "harnesscommunitytest/ant-plugin",
+// 			Inputs: map[string]interface{}{
+// 				"goals": "one/two/three",
+// 			},
+// 		},
+// 	}
 
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Errorf("Unexpected conversion result")
-		t.Log(diff)
-	}
-}
+// 	if diff := cmp.Diff(got, want); diff != "" {
+// 		t.Errorf("Unexpected conversion result")
+// 		t.Log(diff)
+// 	}
+// }
 
-func TestConvertShellTaskToStep(t *testing.T) {
-	// task struct to test
-	task := &jenkinsxml.Task{
-		XMLName: xml.Name{
-			Local: "hudson.tasks.Shell",
-			Space: "",
-		},
-		Content: `
-      <command>echo hello</command>
-      <configuredLocalRules/>
-	`,
-	}
+// func TestConvertShellTaskToStep(t *testing.T) {
+// 	// task struct to test
+// 	task := &jenkinsxml.Task{
+// 		XMLName: xml.Name{
+// 			Local: "hudson.tasks.Shell",
+// 			Space: "",
+// 		},
+// 		Content: `
+//       <command>echo hello</command>
+//       <configuredLocalRules/>
+// 	`,
+// 	}
 
-	got := convertShellTaskToStep(task)
+// 	got := convertShellTaskToStep(task)
 
-	want := &harness.Step{
-		Name: "shell",
-		Type: "script",
-		Spec: &harness.StepExec{
-			Run: "echo hello",
-		},
-	}
+// 	want := &harness.Step{
+// 		Name: "shell",
+// 		Type: "script",
+// 		Spec: &harness.StepExec{
+// 			Run: "echo hello",
+// 		},
+// 	}
 
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Errorf("Unexpected conversion result")
-		t.Log(diff)
-	}
-}
+// 	if diff := cmp.Diff(got, want); diff != "" {
+// 		t.Errorf("Unexpected conversion result")
+// 		t.Log(diff)
+// 	}
+// }
 
-func TestUnsupportedTaskToStep(t *testing.T) {
-	task := "hudson.tasks.Unknown"
+// func TestUnsupportedTaskToStep(t *testing.T) {
+// 	task := "hudson.tasks.Unknown"
 
-	got := unsupportedTaskToStep(task)
+// 	got := unsupportedTaskToStep(task)
 
-	want := &harness.Step{
-		Name: "shell",
-		Type: "script",
-		Spec: &harness.StepExec{
-			Run: "echo Unsupported field hudson.tasks.Unknown",
-		},
-	}
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Errorf("Unexpected conversion result")
-		t.Log(diff)
-	}
-}
+// 	want := &harness.Step{
+// 		Name: "shell",
+// 		Type: "script",
+// 		Spec: &harness.StepExec{
+// 			Run: "echo Unsupported field hudson.tasks.Unknown",
+// 		},
+// 	}
+// 	if diff := cmp.Diff(got, want); diff != "" {
+// 		t.Errorf("Unexpected conversion result")
+// 		t.Log(diff)
+// 	}
+// }

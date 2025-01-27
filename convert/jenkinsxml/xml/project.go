@@ -18,9 +18,22 @@ type (
 	// Project defines a jenkins project.
 	Project struct {
 		// TODO: add support for more fields.
-		ConcurrentBuild bool `xml:"concurrentBuild,omitempty"`
-		Disabled        bool `xml:"disabled,omitempty"`
+		ConcurrentBuild bool      `xml:"concurrentBuild,omitempty"`
+		Disabled        bool      `xml:"disabled,omitempty"`
+		Builders        *Builders `xml:"builders"`
+		Script          string    `xml:"definition>pipelineScript>script"`
+		Pipeline        Pipeline
+	}
 
-		Builders *Builders `xml:"builders"`
+	Pipeline struct {
+		Agent       Agent       `json:"agent"`
+		Environment Environment `json:"environment"`
+		Stages      []Stage     `json:"stages"`
+		Post        Post        `json:"post"`
+		Triggers    Triggers    `json:"triggers"`
+		Options     Options     `json:"options"`
+		Tools       Tools       `json:"tools"`
+		Parameters  Parameters  `json:"parameters"` // Add Parameters struct here
+
 	}
 )
