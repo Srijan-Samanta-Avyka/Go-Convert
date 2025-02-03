@@ -44,12 +44,13 @@ type (
 	}
 
 	Stage struct {
-		Name        string      `json:"name"`
-		Steps       []Steps     `json:"steps"`
-		Post        Post        `json:"post"`
-		When        When        `json:"when"`
-		Parallel    Parallel    `json:"parallel"`
-		Environment Environment `json:"environment"`
+		Name        string                   `json:"name"`
+		Steps       []Steps                  `json:"steps"`
+		Post        Post                     `json:"post"`
+		When        When                     `json:"when"`
+		Parallel    Parallel                 `json:"parallel"`
+		Environment Environment              `json:"environment"`
+		Matrix      map[string][]interface{} `json:"strategy"`
 		Options     Options
 	}
 
@@ -66,13 +67,49 @@ type (
 	}
 
 	When struct {
-		Branch     string `json:"branch"`
-		Tag        string `json:"tag"`        // Git tag condition
-		Expression string `json:"expression"` // Custom expression for condition
+		Branch          string        `json:"branch"`        // Git branch conditio
+		Tag             string        `json:"tag"`           // Git tag condition
+		Expression      string        `json:"expression"`    // Custom expression for condition
+		BuildingTag     bool          `json:"buildingTag"`   // Build is triggered by a tag
+		Changelog       string        `json:"changelog"`     // SCM changelog matches regex
+		Changeset       string        `json:"changeset"`     // SCM changeset matches pattern
+		Changerequest   ChangeRequest `json:"changeRequest"` // Build is a change request (PR/MR)
+		Environment     string        `json:"environment"`   // Matches environment variable condition
+		NotCondition    []Condition   `json:"notCondition,omitempty"`
+		AllOfConditions []Condition   `json:"allOfConditions,omitempty"`
+		AnyOfConditions []Condition   `json:"anyOfConditions,omitempty"`
+		// Equals        string `json:"equals"`        // Compares expected vs actual values
+		// // AllOf         []When `json:"allOf"`         // All conditions must be true
+		// // AnyOf         []When `json:"anyOf"`         // At least one condition must be true
+		// Not           *When  `json:"not"`           // Negates the condition
+		// TriggeredBy   string `json:"triggeredBy"`   // Triggered by specific cause (e.g., SCMTrigger)
+	}
+
+	ChangeRequest struct {
+		Enabled           bool   `json:"enabled"`           // Whether to check for a change request
+		ID                string `json:"id"`                // ID of the change request (PR/MR)
+		Target            string `json:"target"`            // Target branch of the change request
+		Branch            string `json:"branch"`            // Source branch of the change request
+		Fork              string `json:"fork"`              // Fork repository info
+		URL               string `json:"url"`               // URL of the change request
+		Title             string `json:"title"`             // Title of the change request
+		Author            string `json:"author"`            // Author of the change request
+		AuthorDisplayName string `json:"authorDisplayName"` // Display name of the author
+		AuthorEmail       string `json:"authorEmail"`       // Author's email
+	}
+
+	Condition struct {
+		Branch        string `json:"branch"`
+		Tag           string `json:"tag"`
+		ChangeRequest bool   `json:"changeRequest"`
 	}
 
 	Parallel struct {
 		Stages []Stage `json:"stages"`
+	}
+
+	Matrix struct {
+		Matrix map[string][]interface{}
 	}
 
 	Post struct {
