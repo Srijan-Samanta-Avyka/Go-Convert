@@ -452,13 +452,13 @@ func convertSteps(step jenkinsxml.Steps, i int) harnessNew.Steps {
 	if len(step.Script) > 0 {
 		stepType = "run"
 		stepCommandType = "script"
-		for i = 0; i < len(step.Script); i++ {
-			if step.Script[i].Echo != "" {
-				stepCommand = stepCommand + "echo " + "\"" + step.Script[i].Echo + "\"" + "\n"
-			} else if step.Script[i].Shell != "" {
-				stepCommand = stepCommand + step.Script[i].Shell + "\n"
-			} else if step.Script[i].Comment != "" {
-				stepCommand = stepCommand + "# To_Do_Change " + step.Script[i].Comment + "\n"
+		for j := 0; j < len(step.Script); j++ {
+			if step.Script[j].Echo != "" {
+				stepCommand = stepCommand + "echo " + "\"" + step.Script[j].Echo + "\"" + "\n"
+			} else if step.Script[j].Shell != "" {
+				stepCommand = stepCommand + step.Script[j].Shell + "\n"
+			} else if step.Script[j].Comment != "" {
+				stepCommand = stepCommand + "# To_Do_Change " + step.Script[j].Comment + "\n"
 			}
 		}
 	}
@@ -519,9 +519,10 @@ func convertParallelStages(parallelStages []jenkinsxml.Stage) []*harnessNew.Stag
 			i++
 		}
 		stage := &harnessNew.Stage{
-			Name: stage.Name,
-			ID:   slug.Create(stage.Name),
-			Type: "CI",
+			Name:     stage.Name,
+			ID:       slug.Create(stage.Name),
+			Type:     "CI",
+			Strategy: convertMatrixStrategy(stage.Matrix),
 			Spec: &harnessNew.StageCI{
 				Runtime: &harnessNew.Runtime{
 					Type: "Cloud",
@@ -536,6 +537,8 @@ func convertParallelStages(parallelStages []jenkinsxml.Stage) []*harnessNew.Stag
 				},
 				Clone: false,
 			},
+			When: convertStageCondition(stage.When),
+			Vars: convertEnvironmentVariables(stage.Environment),
 		}
 		stages := harnessNew.Stages{
 			Stage: stage,
@@ -547,16 +550,123 @@ func convertParallelStages(parallelStages []jenkinsxml.Stage) []*harnessNew.Stag
 
 }
 
+func convertMatrixStrategy(matrix map[string][]interface{}) *harnessNew.Strategy {
+	var matrixStrategy harnessNew.Strategy
+	if matrix != nil {
+		matrixStrategy.Matrix = matrix
+		return &matrixStrategy
+	}
+	return nil
+}
+
 func convertStageCondition(stageCondition jenkinsxml.When) *harnessNew.StageWhen {
 	var harnessCondition string
-	if stageCondition == (jenkinsxml.When{}) {
-		return nil
-	}
+	var conditions []string
+
 	if stageCondition.Branch != "" {
-		harnessCondition = harnessCondition + "<+pipeline.branch> ==" + "\"" + stageCondition.Branch + "\""
+		conditions = append(conditions, fmt.Sprintf("<+pipeline.branch> == \"%s\"", stageCondition.Branch))
+	}
+
+	if stageCondition.BuildingTag {
+
+		conditions = append(conditions, fmt.Sprintf("<+pipeline.repo>.tags.contains('<+codebase.tag>')"))
+	}
+
+	if stageCondition.Changelog != "" {
+
+		conditions = append(conditions, fmt.Sprintf("<+codebase.commitMessage> == \"%s\"", stageCondition.Changelog))
+	}
+
+	if stageCondition.Changerequest.Enabled {
+		// Handle the change request fields like author email, target, source branch, etc.
+		if stageCondition.Changerequest.AuthorEmail != "" {
+			conditions = append(conditions, fmt.Sprintf("<+pipeline.triggeredBy.email> == \"%s\"", stageCondition.Changerequest.AuthorEmail))
+		}
+		if stageCondition.Changerequest.ID != "" {
+			conditions = append(conditions, fmt.Sprintf("<+trigger.prNumber> == \"%s\"", stageCondition.Changerequest.ID))
+		}
+		if stageCondition.Changerequest.URL != "" {
+			conditions = append(conditions, fmt.Sprintf("<+trigger.repoUrl> == \"%s\"", stageCondition.Changerequest.URL))
+		}
+		if stageCondition.Changerequest.Author != "" {
+			conditions = append(conditions, fmt.Sprintf("<+pipeline.triggeredBy.name> == \"%s\"", stageCondition.Changerequest.Author))
+		}
+		if stageCondition.Changerequest.Target != "" {
+			conditions = append(conditions, fmt.Sprintf("<+trigger.targetBranch> == \"%s\"", stageCondition.Changerequest.Target))
+		}
+		if stageCondition.Changerequest.Branch != "" {
+			conditions = append(conditions, fmt.Sprintf("<+trigger.sourceBranch> == \"%s\"", stageCondition.Changerequest.Branch))
+		}
+		if stageCondition.Changerequest.Title != "" {
+			conditions = append(conditions, fmt.Sprintf("<+trigger.prTitle> == \"%s\"", stageCondition.Changerequest.Title))
+		}
+		if stageCondition.Changerequest.URL != "" {
+			conditions = append(conditions, fmt.Sprintf("<+trigger.repoUrl> == \"%s\"", stageCondition.Changerequest.URL))
+		}
+	}
+
+	if stageCondition.Tag != "" {
+
+		conditions = append(conditions, fmt.Sprintf("<+pipeline.tag> =~ \"%s\"", stageCondition.Tag))
+	}
+
+	// Check for 'NotConditions'
+	if len(stageCondition.NotCondition) > 0 {
+		var notConditions []string
+		for _, cond := range stageCondition.NotCondition {
+			if cond.Branch != "" {
+				notConditions = append(notConditions, fmt.Sprintf("<+pipeline.branch> != \"%s\"", cond.Branch))
+			}
+			if cond.Tag != "" {
+				notConditions = append(notConditions, fmt.Sprintf("<+pipeline.tag> != \"%s\"", cond.Tag))
+			}
+			if cond.ChangeRequest {
+				notConditions = append(notConditions, "<+pipeline.changeRequest> != true")
+			}
+		}
+		conditions = append(conditions, fmt.Sprintf(strings.Join(notConditions, " && ")))
+	}
+
+	// Check for 'AllOfConditions'
+	if len(stageCondition.AllOfConditions) > 0 {
+		var allOfConditions []string
+		for _, cond := range stageCondition.AllOfConditions {
+			if cond.Branch != "" {
+				allOfConditions = append(allOfConditions, fmt.Sprintf("<+pipeline.branch> == \"%s\"", cond.Branch))
+			}
+			if cond.Tag != "" {
+				allOfConditions = append(allOfConditions, fmt.Sprintf("<+pipeline.tag> == \"%s\"", cond.Tag))
+			}
+			if cond.ChangeRequest {
+				allOfConditions = append(allOfConditions, "<+pipeline.changeRequest> == true")
+			}
+		}
+		conditions = append(conditions, fmt.Sprintf(strings.Join(allOfConditions, " && ")))
+	}
+
+	// Check for 'AnyOfConditions'
+
+	if len(stageCondition.AnyOfConditions) > 0 {
+		var anyOfConditions []string
+		for _, cond := range stageCondition.AnyOfConditions {
+			if cond.Branch != "" {
+				anyOfConditions = append(anyOfConditions, fmt.Sprintf("<+pipeline.branch> == \"%s\"", cond.Branch))
+			}
+			if cond.Tag != "" {
+				anyOfConditions = append(anyOfConditions, fmt.Sprintf("<+pipeline.tag> == \"%s\"", cond.Tag))
+			}
+			if cond.ChangeRequest {
+				anyOfConditions = append(anyOfConditions, "<+pipeline.changeRequest> == true")
+			}
+		}
+		conditions = append(conditions, fmt.Sprintf(strings.Join(anyOfConditions, " || ")))
+	}
+	// Combine conditions into a final condition string
+	if len(conditions) > 0 {
+		harnessCondition = strings.Join(conditions, " && ")
 	}
 	return &harnessNew.StageWhen{
-		PipelineStatus: "Success",
+		PipelineStatus: "Success", // Default to 'Success' if no specific status is provided
 		Condition:      harnessCondition,
 	}
 }

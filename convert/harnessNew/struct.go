@@ -77,7 +77,7 @@ type (
 	}
 
 	Strategy struct {
-		Matrix map[string]interface{} `json:"matrix,omitempty" yaml:"matrix,omitempty"`
+		Matrix map[string][]interface{} `json:"matrix,omitempty" yaml:"matrix,omitempty"`
 	}
 
 	// Infrastructure provides pipeline infrastructure.

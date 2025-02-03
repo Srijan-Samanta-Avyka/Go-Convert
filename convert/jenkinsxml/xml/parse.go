@@ -366,7 +366,9 @@ func ParseScript(Tokens []Token) Pipeline {
 	}
 	stage := Stage{Environment: Environment{Variables: make(map[string]Variable)}}
 	parallelInnerStage := Stage{}
+	matrixInnerStage := Stage{}
 	parallelBlock := false
+	martrixBlock := false
 	post := Post{}
 	when := When{}
 	keywordMap := map[string]bool{
@@ -392,8 +394,18 @@ func ParseScript(Tokens []Token) Pipeline {
 		"retry":       true,
 		"tools":       true,
 		"when":        true,
+		"not":         true,
+		"anyOf":       true,
+		"allOf":       true,
 		"branch":      true,
+		"tag":         true,
+		"buildingTag": true,
 		"parallel":    true,
+		"matrix":      true,
+		"axis":        true,
+		"name":        true,
+		"values":      true,
+		"exclude":     true,
 		"jdk":         true,
 		"maven":       true,
 		"parameters":  true,
@@ -409,6 +421,16 @@ func ParseScript(Tokens []Token) Pipeline {
 	var scripts []Script
 	var parenthesisKeyword []string
 	var parenthesis []bool
+	var matrix = make(map[string][]interface{})
+	var excludeMatrix = make(map[string]interface{})
+	// matrix["exclude"] = append(matrix["exclude"], map[string]string{
+	// 	"key1": "value1",
+	// 	"key2": "value2",
+	// })
+	// matrix["exclude"] = append(matrix["exclude"], map[string]string{
+	// 	"key1": "value1",
+	// 	"key2": "value2",
+	// })
 	//var parenthesisInScriptComment int
 	for i := 0; i < len(Tokens); i++ {
 		// Handling the Open Braces That are Not Part of Keyword
@@ -446,16 +468,26 @@ func ParseScript(Tokens []Token) Pipeline {
 				if parallelBlock {
 					stage.Parallel.Stages = append(stage.Parallel.Stages, parallelInnerStage)
 					parallelInnerStage = Stage{Environment: Environment{Variables: make(map[string]Variable)}}
+				} else if martrixBlock {
+					stage.Parallel.Stages = append(stage.Parallel.Stages, matrixInnerStage)
+					matrixInnerStage = Stage{Environment: Environment{Variables: make(map[string]Variable)}}
 				} else {
 					pipeline.Stages = append(pipeline.Stages, stage)
 					stage = Stage{Environment: Environment{Variables: make(map[string]Variable)}}
 				}
 			}
 
+			if currentBlock == "exclude" {
+				matrix["exclude"] = append(matrix["exclude"], excludeMatrix)
+				excludeMatrix = make(map[string]interface{})
+			}
+
 			if currentBlock == "post" {
 				if parenthesisKeyword[len(parenthesisKeyword)-2] == "stage" {
 					if parallelBlock {
 						parallelInnerStage.Post = post
+					} else if martrixBlock {
+						matrixInnerStage.Post = post
 					} else {
 						stage.Post = post
 					}
@@ -467,6 +499,11 @@ func ParseScript(Tokens []Token) Pipeline {
 
 			if currentBlock == "parallel" {
 				parallelBlock = false
+			}
+
+			if currentBlock == "matrix" {
+				martrixBlock = false
+				matrix = make(map[string][]interface{})
 			}
 
 			if currentBlock == "script" {
@@ -486,6 +523,8 @@ func ParseScript(Tokens []Token) Pipeline {
 				scripts = nil
 				if parallelBlock {
 					parallelInnerStage.Steps = append(parallelInnerStage.Steps, step)
+				} else if martrixBlock {
+					matrixInnerStage.Steps = append(matrixInnerStage.Steps, step)
 				} else {
 					stage.Steps = append(stage.Steps, step)
 				}
@@ -495,6 +534,8 @@ func ParseScript(Tokens []Token) Pipeline {
 			if currentBlock == "when" {
 				if parallelBlock {
 					parallelInnerStage.When = when
+				} else if martrixBlock {
+					matrixInnerStage.When = when
 				} else {
 					stage.When = when
 				}
@@ -550,8 +591,53 @@ func ParseScript(Tokens []Token) Pipeline {
 		//------------------- Getting Values For Parallel Block -------------------
 
 		if currentBlock == "parallel" {
-			fmt.Print(parallelBlock)
+
 			parallelBlock = true
+
+		}
+
+		//------------------- Getting Values For Matrix Block -------------------
+
+		if currentBlock == "matrix" {
+
+			martrixBlock = true
+
+		}
+
+		//------------------- Getting Values For Axis Block -------------------
+
+		if currentBlock == "axis" {
+			if parenthesisKeyword[len(parenthesisKeyword)-2] == "exclude" {
+				if currentKeyword == "name" {
+					i++
+					axisKeyName := Tokens[i].Value
+					excludeMatrix[axisKeyName] = nil
+					i++
+					if Tokens[i].Value == "values" {
+						i++
+						excludeMatrix[axisKeyName] = Tokens[i].Value
+					}
+				}
+
+			} else {
+				if currentKeyword == "name" {
+					i++
+					axisKeyName := Tokens[i].Value
+					matrix[axisKeyName] = nil
+					i++
+					if Tokens[i].Value == "values" {
+						for {
+							i++
+							if Tokens[i].Value != "," {
+								matrix[axisKeyName] = append(matrix[axisKeyName], Tokens[i].Value)
+							}
+							if Tokens[i+1].Value == "}" {
+								break
+							}
+						}
+					}
+				}
+			}
 		}
 
 		//------------------- Getting Values For Stage Block -------------------
@@ -562,6 +648,9 @@ func ParseScript(Tokens []Token) Pipeline {
 					i += 2
 					if parallelBlock {
 						parallelInnerStage.Name = Tokens[i].Value
+					} else if martrixBlock {
+						matrixInnerStage.Name = Tokens[i].Value
+						matrixInnerStage.Matrix = matrix
 					} else {
 						stage.Name = Tokens[i].Value
 					}
@@ -570,6 +659,9 @@ func ParseScript(Tokens []Token) Pipeline {
 					i++
 					if parallelBlock {
 						parallelInnerStage.Name = Tokens[i].Value
+					} else if martrixBlock {
+						matrixInnerStage.Name = Tokens[i].Value
+						matrixInnerStage.Matrix = matrix
 					} else {
 						stage.Name = Tokens[i].Value
 					}
@@ -588,6 +680,8 @@ func ParseScript(Tokens []Token) Pipeline {
 				step := Steps{Shell: Tokens[i].Value}
 				if parallelBlock {
 					parallelInnerStage.Steps = append(parallelInnerStage.Steps, step)
+				} else if martrixBlock {
+					matrixInnerStage.Steps = append(matrixInnerStage.Steps, step)
 				} else {
 					stage.Steps = append(stage.Steps, step)
 				}
@@ -596,6 +690,8 @@ func ParseScript(Tokens []Token) Pipeline {
 				step := Steps{Echo: Tokens[i].Value}
 				if parallelBlock {
 					parallelInnerStage.Steps = append(parallelInnerStage.Steps, step)
+				} else if martrixBlock {
+					matrixInnerStage.Steps = append(matrixInnerStage.Steps, step)
 				} else {
 					stage.Steps = append(stage.Steps, step)
 				}
@@ -644,9 +740,9 @@ func ParseScript(Tokens []Token) Pipeline {
 				currentKeyword = ""
 			} else if currentKeyword == "" {
 				commentString = commentString + Tokens[i].Value
-				if Tokens[i].Value == "{" {
-					//parenthesisInScriptComment++
-				}
+				// if Tokens[i].Value == "{" {
+				// 	//parenthesisInScriptComment++
+				// }
 
 			}
 
@@ -658,7 +754,141 @@ func ParseScript(Tokens []Token) Pipeline {
 			if currentKeyword == "branch" {
 				i++
 				when.Branch = Tokens[i].Value
+			} else if currentKeyword == "tag" {
+				i++
+				when.Tag = Tokens[i].Value
+			} else if currentKeyword == "buildingTag" {
+				when.BuildingTag = true
+			} else if currentKeyword == "changeRequest" {
+				// Create a new ChangeRequest object if it's not initialized
+				changeRequest := ChangeRequest{}
+				changeRequest.Enabled = true
+
+				// Loop through the tokens to parse the attributes of changeRequest
+				for i < len(Tokens) {
+					if Tokens[i].Value == "id:" {
+						i++ // Skip "id:"
+						if Tokens[i].Type == "string" {
+							changeRequest.ID = Tokens[i].Value
+						}
+					} else if Tokens[i].Value == "target:" {
+						i++ // Skip "target:"
+						if Tokens[i].Type == "string" {
+							changeRequest.Target = Tokens[i].Value
+						}
+					} else if Tokens[i].Value == "branch:" {
+						i++ // Skip "branch:"
+						if Tokens[i].Type == "string" {
+							changeRequest.Branch = Tokens[i].Value
+						}
+					} else if Tokens[i].Value == "fork:" {
+						i++ // Skip "fork:"
+						if Tokens[i].Type == "string" {
+							changeRequest.Fork = Tokens[i].Value
+						}
+					} else if Tokens[i].Value == "url:" {
+						i++ // Skip "url:"
+						if Tokens[i].Type == "string" {
+							changeRequest.URL = Tokens[i].Value
+						}
+					} else if Tokens[i].Value == "title:" {
+						i++ // Skip "title:"
+						if Tokens[i].Type == "string" {
+							changeRequest.Title = Tokens[i].Value
+						}
+					} else if Tokens[i].Value == "author:" {
+						i++ // Skip "author:"
+						if Tokens[i].Type == "string" {
+							changeRequest.Author = Tokens[i].Value
+						}
+					} else if Tokens[i].Value == "authorDisplayName:" {
+						i++ // Skip "authorDisplayName:"
+						if Tokens[i].Type == "string" {
+							changeRequest.AuthorDisplayName = Tokens[i].Value
+						}
+					} else if Tokens[i].Value == "authorEmail:" {
+						i++ // Skip "authorEmail:"
+						if Tokens[i].Type == "string" {
+							// changeRequest.AuthorEmail = Tokens[i].Value
+							changeRequest.AuthorEmail = strings.Trim(Tokens[i].Value, "'")
+						}
+					}
+
+					// Stop parsing if we encounter a closing brace or another block
+					if Tokens[i].Value == "}" || (i+1 < len(Tokens) && keywordMap[Tokens[i+1].Value]) {
+						break
+					}
+
+					i++ // Move to next token
+				}
+
+				// Store the parsed changeRequest in the when block
+				when.Changerequest = changeRequest
+			} else if currentKeyword == "changelog" {
+				i++
+				when.Changelog = Tokens[i].Value
 			}
+			// } else if currentKeyword == "not" {
+			//  // Parse the nested condition inside 'not'
+			//  when.NotCondition = parseCondition(Tokens[i+1:]) // You'll need a helper function to parse nested conditions
+			//  i++ // Skip to next token after the 'not'
+			// } else if currentKeyword == "allOf" {
+			//  // Parse the nested conditions inside 'allOf'
+			//  when.AllOfConditions = parseConditions(Tokens[i+1:]) // You'll need a helper function to parse nested conditions
+			//  i++ // Skip to next token after the 'allOf'
+			// } else if currentKeyword == "anyOf" {
+			//  // Parse the nested conditions inside 'anyOf'
+			//  when.AnyOfConditions = parseConditions(Tokens[i+1:]) // You'll need a helper function to parse nested conditions
+			//  i++ // Skip to next token after the 'anyOf'
+			// }
+		}
+
+		if currentBlock == "not" {
+			if currentKeyword == "branch" {
+				i++
+				condition := Condition{Branch: Tokens[i].Value}
+				when.NotCondition = append(when.NotCondition, condition)
+				currentKeyword = ""
+			} else if currentKeyword == "tag" {
+				condition := Condition{Tag: Tokens[i].Value}
+				when.NotCondition = append(when.NotCondition, condition)
+			} else if currentKeyword == "buildingTag" {
+				condition := Condition{Tag: Tokens[i].Value}
+				when.NotCondition = append(when.NotCondition, condition)
+			}
+
+		}
+
+		if currentBlock == "allOf" {
+			if currentKeyword == "branch" {
+				i++
+				condition := Condition{Branch: Tokens[i].Value}
+				when.AllOfConditions = append(when.AllOfConditions, condition)
+				currentKeyword = ""
+			} else if currentKeyword == "tag" {
+				condition := Condition{Tag: Tokens[i].Value}
+				when.AllOfConditions = append(when.AllOfConditions, condition)
+			} else if currentKeyword == "buildingTag" {
+				condition := Condition{Tag: Tokens[i].Value}
+				when.AllOfConditions = append(when.AllOfConditions, condition)
+			}
+
+		}
+
+		if currentBlock == "anyOf" {
+			if currentKeyword == "branch" {
+				i++
+				condition := Condition{Branch: Tokens[i].Value}
+				when.AnyOfConditions = append(when.AnyOfConditions, condition)
+				currentKeyword = ""
+			} else if currentKeyword == "tag" {
+				condition := Condition{Tag: Tokens[i].Value}
+				when.AnyOfConditions = append(when.AnyOfConditions, condition)
+			} else if currentKeyword == "buildingTag" {
+				condition := Condition{Tag: Tokens[i].Value}
+				when.AnyOfConditions = append(when.AnyOfConditions, condition)
+			}
+
 		}
 
 		/*------------------- Getting Values For Triggers Block -------------------*/
