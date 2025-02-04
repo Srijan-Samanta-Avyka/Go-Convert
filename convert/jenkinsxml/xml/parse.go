@@ -850,6 +850,7 @@ func ParseScript(Tokens []Token) Pipeline {
 				when.NotCondition = append(when.NotCondition, condition)
 				currentKeyword = ""
 			} else if currentKeyword == "tag" {
+				i++
 				condition := Condition{Tag: Tokens[i].Value}
 				when.NotCondition = append(when.NotCondition, condition)
 			} else if currentKeyword == "buildingTag" {
@@ -866,11 +867,14 @@ func ParseScript(Tokens []Token) Pipeline {
 				when.AllOfConditions = append(when.AllOfConditions, condition)
 				currentKeyword = ""
 			} else if currentKeyword == "tag" {
+				i++
 				condition := Condition{Tag: Tokens[i].Value}
 				when.AllOfConditions = append(when.AllOfConditions, condition)
+				currentKeyword = ""
 			} else if currentKeyword == "buildingTag" {
 				condition := Condition{Tag: Tokens[i].Value}
 				when.AllOfConditions = append(when.AllOfConditions, condition)
+				currentKeyword = ""
 			}
 
 		}
@@ -882,11 +886,14 @@ func ParseScript(Tokens []Token) Pipeline {
 				when.AnyOfConditions = append(when.AnyOfConditions, condition)
 				currentKeyword = ""
 			} else if currentKeyword == "tag" {
+				i++
 				condition := Condition{Tag: Tokens[i].Value}
 				when.AnyOfConditions = append(when.AnyOfConditions, condition)
+				currentKeyword = ""
 			} else if currentKeyword == "buildingTag" {
 				condition := Condition{Tag: Tokens[i].Value}
 				when.AnyOfConditions = append(when.AnyOfConditions, condition)
+				currentKeyword = ""
 			}
 
 		}
